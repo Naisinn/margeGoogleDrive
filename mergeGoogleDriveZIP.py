@@ -1,5 +1,6 @@
 import os
 import zipfile
+from tqdm import tqdm
 
 def extract_and_combine_zips(destination):
     print("Enter the paths of the ZIP files separated by 'Enter'. Type 'done' when finished:")
@@ -21,13 +22,21 @@ def extract_and_combine_zips(destination):
         print(f"Destination directory does not exist: {destination}")
         return
 
-    for zip_file in zip_files:
+    # プログレスバーをZIPファイルの数で設定
+    for zip_file in tqdm(zip_files, desc="Processing ZIP files", unit="file"):
         if not os.path.exists(zip_file):
             print(f"File not found: {zip_file}")
             continue
 
-        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
-            zip_ref.extractall(destination)
+        try:
+            with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+                # 各ZIP内のファイル数でサブプログレスバーを設定（オプション）
+                file_list = zip_ref.namelist()
+                for file in tqdm(file_list, desc=f"Extracting {os.path.basename(zip_file)}", unit="file", leave=False):
+                    zip_ref.extract(file, destination)
+        except zipfile.BadZipFile:
+            print(f"Bad ZIP file: {zip_file}")
+            continue
 
     print("Extraction and combination complete.")
 
